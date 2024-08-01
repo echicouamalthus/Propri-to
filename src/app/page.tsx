@@ -8,7 +8,7 @@ export default function Home() {
     <main>
       <NavBar />
 
-      <section className='mx-auto grid lg:min-h-[580px] max-w-5xl place-content-center gap-6 my-4'>
+      <section className='mx-auto grid lg:min-h-[550px] max-w-5xl place-content-center gap-6 my-4'>
         <h1 className='text-center font-mono lg:text-6xl text-5xl px-2'>
           Une solution à long terme pour les contrats à court terme
         </h1>

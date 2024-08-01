@@ -32,9 +32,9 @@ export default function NavBar() {
           <div className='flex justify-center lg:block lg:w-full'>
             <ul
               className={clsx(
-                'absolute left-0 top-28 -z-20 flex w-full flex-col gap-4 bg-white p-4 transition-all duration-100 ease-in-out lg:static lg:h-auto lg:flex-row lg:bg-transparent lg:p-0',
+                'absolute -top-32 left-0 -z-20 flex w-full flex-col gap-4 bg-white p-4 transition-all duration-100 ease-in-out lg:static lg:h-auto lg:flex-row lg:bg-transparent lg:p-0',
                 {
-                  '-top-32': ouvrir === false
+                  'top-28': ouvrir === false
                 }
               )}
             >
@@ -56,7 +56,7 @@ export default function NavBar() {
               variant={'ghost'}
               className='block p-0 lg:hidden'
             >
-              {ouvrir ? (
+              {!ouvrir ? (
                 <X onClick={() => setOuvrir(prevOuvrir => !prevOuvrir)} />
               ) : (
                 <MenuIcon
