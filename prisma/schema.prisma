@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  
 }
 
 datasource db {
@@ -19,4 +20,11 @@ model Todo {
   text String
   isCompleted Boolean @default(false)
   createAt DateTime @default(now())
+  status Status @default(Definis)
+}
+
+enum Status {
+  finis 
+  enCours
+  Definis
 }
