@@ -19,7 +19,7 @@ export const Lot = z.object({
   equipement_commun: z.array(
     z.string().min(2, { message: 'veuillez entrez une information correct' })
   ),
-  total_number: z.coerce.number({ required_error: 'Veuillez entrez un nombre' })
+  total_number: z.coerce.number({ required_error: 'Veuillez entrez un nombre' }),
 })
 
 export type TLot = z.infer<typeof Lot>
