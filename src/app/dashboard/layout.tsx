@@ -1,3 +1,11 @@
-export default function layout({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>
+import RolePage from "@/components/RolePage";
+
+export default function layout({
+  admin,
+  user,
+}: {
+  admin: React.ReactNode;
+  user: React.ReactNode;
+}) {
+  return <RolePage user={user} admin={admin} />;
 }

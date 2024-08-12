@@ -1,29 +1,21 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/client"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
-model Todo {
-  id          Int      @id @default(autoincrement())
-  text        String
-  isCompleted Boolean  @default(false)
-  createAt    DateTime @default(now())
-  status      Status   @default(Definis)
-}
-
-model Profile {
-  id Int @id @default(autoincrement())
+model Proprietaire {
+  id String @id @default(uuid())
+  nom_complet String
   email String @unique
-}
-
-enum Status {
-  finis
-  enCours
-  Definis
+  telephone String @unique
+  adresse String
+  option_pay Boolean @default(false)
+  profession String
+  nom_contact String
+  contact String
 }
