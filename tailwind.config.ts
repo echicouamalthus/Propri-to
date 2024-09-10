@@ -21,6 +21,13 @@ const config = {
       fontFamily: {
         mono: ['var(--font-anton)']
       },
+      aspectRatio: {
+        '1/3': '1 / 3',
+        '4/3': '4 / 3',
+        '7/12': '7 / 12',
+        '9/12': '9 / 12',
+        '17/9': '17 / 9'
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -77,7 +84,7 @@ const config = {
       }
     }
   },
-  plugins: [require('tailwindcss-animate')]
+  plugins: [require('tailwindcss-animate'), require('tailwind-scrollbar')]
 } satisfies Config
 
 export default config

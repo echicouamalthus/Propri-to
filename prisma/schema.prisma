@@ -3,19 +3,91 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model Proprietaire {
-  id String @id @default(uuid())
+  id          String  @id @default(uuid())
   nom_complet String
-  email String @unique
-  telephone String @unique
-  adresse String
-  option_pay Boolean @default(false)
-  profession String
+  email       String  @unique
+  telephone   String  @unique
+  adresse     String
+  option_pay  Boolean @default(false)
+  profession  String
   nom_contact String
-  contact String
+  contact     String
+  bien        Lot[]
+}
+
+model Lot {
+  id                  String               @id @default(uuid())
+  type                String
+  superficie          Int
+  adresse             String
+  regime_juridique    String
+  meuble              Boolean              @default(false)
+  equipement_privatif String[]
+  equipement_commun   String[]
+  total_number        Int
+  prix                Int
+  image               String?
+  nom_bien            String
+  proprietaireId      String
+  dossier_de_location Dossier_de_Location[]
+  proprietaire        Proprietaire         @relation(fields: [proprietaireId], references: [id], onDelete: Cascade)
+  ticket Ticket[]
+}
+
+model Locataire {
+  id                  String               @id @default(uuid())
+  nom                 String
+  prenom              String
+  date_de_naissance   DateTime
+  lieu_de_naissance   String
+  adresse_actuel      String
+  email               String               @unique
+  telephone           String               @unique
+  statu_marital       String
+  total_people        Int
+  type_lot            String
+  pet                 Boolean
+  statu_pro           String
+  employeur           String
+  dossier_de_Location Dossier_de_Location[]
+  ticket Ticket[]
+}
+
+model Dossier_de_Location {
+  id                    String    @id @default(uuid())
+  nom_dossier           String
+  date_de_signature     DateTime  @default(now())
+  prise_effet           DateTime
+  date_de_fin           DateTime
+  language              String
+  clause                String
+  type_de_contrat       String
+  jour_de_paiement      String
+  frequence_de_paiement String
+  locataireId           String    
+  lotId                 String   
+  etat_locatif          String
+  locataire             Locataire @relation(fields: [locataireId], references: [id], onDelete: Cascade)
+  lot                   Lot       @relation(fields: [lotId], references: [id], onDelete: Cascade)
+}
+
+model Ticket {
+  id String @id @default(uuid())
+  type_de_demande String
+  date_de_creation DateTime @default(now())
+  statut String
+  priority String
+  description String?
+
+  locataireId String
+  locataire Locataire @relation(fields: [locataireId], references: [id], onDelete: Cascade)
+
+  lotId String
+  lot Lot @relation(fields: [lotId], references: [id], onDelete: Cascade)
 }

@@ -3,7 +3,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Step, Stepper, useStepper } from '@/components/ui/stepper'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import Image from 'next/image'
 import {
   Form,
   FormControl,
@@ -14,14 +15,13 @@ import {
   FormMessage
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { useState } from 'react'
-import { TProprietaire, Proprietaire } from '@/entites/proprietaire'
-import { PhoneInput } from '@/components/ui/phone-input'
-import { HousePlus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { TProprietaire } from '@/entites/proprietaire'
+import { HousePlus, Paperclip } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
-import { Lot, TLot } from '@/entites/lot'
+import { LotSchema, TLot } from '@/entites/lot'
 import {
   Select,
   SelectContent,
@@ -38,6 +38,16 @@ import {
   MultiSelectorTrigger
 } from '@/components/ui/multi-select'
 import { ListOption, ListOption2 } from '@/lib/constant/list-option'
+import { z } from 'zod'
+import { DropzoneOptions } from 'react-dropzone'
+import {
+  FileInput,
+  FileUploader,
+  FileUploaderContent,
+  FileUploaderItem
+} from '@/components/ui/file-upload'
+import { useServerAction } from 'zsa-react'
+import { createLotAction } from './_action'
 
 const steps = [
   { label: 'données sur le biens ' },
@@ -59,7 +69,7 @@ export default function CreateOwnerForm() {
           <HousePlus className='h-16 w-16' />
         </Button>
         <div>
-          <h3 className='font-mono lg:text-3xl'>Nouveau d&apos;un Bien</h3>
+          <h3 className='font-mono lg:text-3xl'>Nouveau Bien</h3>
           <p className='text-[9px] text-stone-600 lg:text-sm'>
             Afin de créer un nouveau Bien, veuillez complétez les information
             suivant. Les champs marqués d&apos;un * requis
@@ -69,7 +79,7 @@ export default function CreateOwnerForm() {
       <div className='flex w-full flex-col gap-4'>
         <Stepper
           variant='circle-alt'
-          initialStep={2}
+          initialStep={0}
           steps={steps}
           className='capitalize'
         >
@@ -104,7 +114,7 @@ function FirstStepForm({
   const { nextStep } = useStepper()
   const form = useForm<TLot>({
     resolver: zodResolver(
-      Lot.pick({
+      LotSchema.pick({
         type: true,
         superficie: true,
         adresse: true,
@@ -292,7 +302,7 @@ function SecondStepForm({
 
   const form = useForm<TLot>({
     resolver: zodResolver(
-      Lot.pick({
+      LotSchema.pick({
         meuble: true,
         equipement_privatif: true,
         equipement_commun: true,
@@ -308,7 +318,6 @@ function SecondStepForm({
   function onSubmit(_data: TLot) {
     updateFormData(_data)
     nextStep()
-    // console.log(_data)
   }
   //   const [base64, setBase64] = useState<string | null>('')
 
@@ -347,6 +356,10 @@ function SecondStepForm({
                     <FormLabel className='text-base'>
                       le local est-il meublé
                     </FormLabel>
+                    <FormDescription>
+                      En cochant cette case vous confirmer que ce bien possède
+                      des meuble
+                    </FormDescription>
                   </div>
                   <FormControl>
                     <Switch
@@ -467,105 +480,268 @@ function ThirdStepForm({
   updateFormData: (newData: TLot) => void
   formData: TLot | undefined
 }) {
-  const [enable, setEnable] = useState<boolean | undefined>(false)
   const { nextStep } = useStepper()
-  //   const { isPending, execute } = useServerAction(createProprietaireAction)
+
+  const [proprietaires, setProprietaires] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchProprietaires = async () => {
+      try {
+        const response = await fetch('/api/owners')
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des propriétaires')
+        }
+        const data: TProprietaire[] = await response.json()
+        setProprietaires(data)
+      } catch (error: any) {
+        setError(error.message)
+      }
+    }
+
+    fetchProprietaires()
+  }, [])
+
+  const [base64, setBase64] = useState<string | null>('')
+  const { isPending, execute } = useServerAction(createLotAction)
 
   const form = useForm<TLot>({
     resolver: zodResolver(
-      Proprietaire.pick({
-        option_pay: true,
-        profession: true,
-        contact: true,
-        nom_contact: true
+      LotSchema.pick({
+        prix: true,
+        image: true,
+        nom_bien: true,
+        proprietaireId: true
       })
     )
   })
 
-  async function onSubmit(_data: TLot) {
-    updateFormData(_data)
+  const dropzone = {
+    multiple: false,
+    maxFiles: 3,
+    maxSize: 4 * 1024 * 1024
+  } satisfies DropzoneOptions
 
-    console.log(`Final Form Data:`, { ...formData, ..._data })
-    nextStep()
+  const customBase64Upload = async (file: File) => {
+    const reader = new FileReader()
+
+    reader.onloadend = function () {
+      const base64data = reader.result as string
+      setBase64(base64data)
+    }
+
+    reader.readAsDataURL(file)
   }
+
+  async function onSubmit(_data: TLot) {
+    // console.log(`Final Form Data:`, { ...formData, ..._data })
+    // console.log(_data)
+    const fileBase64 = _data.image?.map(async file => ({
+      name: file.name,
+      type: file.type,
+      content: await customBase64Upload(file)
+    }))
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    const payload = {
+      ..._data,
+      image: base64
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    console.log()
+
+    if (payload.image && payload.image?.length > 0) {
+      updateFormData(_data)
+
+      console.log(`alors final data is `, { ...formData, ...payload })
+      const [data, err] = await execute({
+        ...formData,
+        ...payload
+      })
+
+      nextStep()
+      if (err) {
+        console.log('quelque chose ne va pas', err)
+      }
+    }
+  }
+
+  //   const customBase64Uploader = async (
+  //     event: React.ChangeEvent<HTMLInputElement>
+  //   ) => {
+  //     const file = event.target.files?.[0]
+  //     if (!file) return
+
+  //     const reader = new FileReader()
+
+  //     reader.onloadend = function () {
+  //       const base64data = reader.result as string
+  //       setBase64(base64data) // Stockez le résultat base64 dans l'état
+  //     }
+
+  //     reader.readAsDataURL(file)
+  //   }
+
+  //   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //     e.preventDefault()
+  //     console.log('Base64 Encoded File: ', base64)
+  //   }
+  // console.log(base64)
 
   return (
     <Card className='pt-8'>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
-            <FormField
-              control={form.control}
-              name='option_pay'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel className='text-xs lg:text-base'>
-                      Gérer les paiements par tiers
-                    </FormLabel>
-                    <FormDescription className='text-xs'>
-                      En cochant cette case vous attribuez le droit de la
-                      reception du loyer à un tiers(une agence...)
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value && enable}
-                      onCheckedChange={field.onChange}
-                      onClick={() => setEnable(!enable)}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        {proprietaires.length > 0 && (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className='relative w-full gap-2 space-y-3'
+            >
+              <FormField
+                control={form.control}
+                name='prix'
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Prix du Loyer</FormLabel>
+                      <FormControl>
+                        <Input
+                          type='number'
+                          placeholder='100 000 XOF'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Veuillez s&apos;il vous plaît entrez le montant du loyer
+                        hors charge
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
 
-            <FormField
-              control={form.control}
-              name='profession'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Profession</FormLabel>
-                  <FormControl>
-                    <Input placeholder='Profession' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name='nom_bien'
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Nom du biens</FormLabel>
+                      <FormControl>
+                        <Input
+                          type='text'
+                          placeholder='Ex: Appartement les louanges'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Veuillez s&apos;il vous plaît entrez nom correct
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
 
-            <FormField
-              control={form.control}
-              name='nom_contact'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom</FormLabel>
-                  <FormControl>
-                    <Input placeholder='John Doe' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name='proprietaireId'
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Assignez un Propriétaire</FormLabel>
 
-            <FormField
-              control={form.control}
-              name='contact'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Personne à contactez en cas d&apos;urgence
-                  </FormLabel>
-                  <FormControl>
-                    <PhoneInput placeholder='+225 00 00 00 0000' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              className='placeholder:text-stone-300'
+                              placeholder='selectionnez un propriétaire'
+                            />
+                          </SelectTrigger>
+                        </FormControl>
 
-            <StepperFormActions />
-          </form>
-        </Form>
+                        <SelectContent>
+                          {proprietaires.map(e => {
+                            return (
+                              <SelectItem key={e.id} value={e.id}>
+                                {e.nom_complet}
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )
+                }}
+              />
+
+              <FormField
+                control={form.control}
+                name='image'
+                render={({ field }) => (
+                  <FormItem className='outline outline-1 outline-border'>
+                    <FileUploader
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      dropzoneOptions={dropzone}
+                      className='relative rounded-lg bg-background p-2'
+                    >
+                      <FileInput className='outline-dashed outline-1 outline-white'>
+                        <div className='flex w-full flex-col items-center justify-center pb-4 pt-3'>
+                          <svg
+                            className='mb-3 h-8 w-8 text-gray-500 dark:text-gray-400'
+                            aria-hidden='true'
+                            xmlns='http://www.w3.org/2000/svg'
+                            fill='none'
+                            viewBox='0 0 20 16'
+                          >
+                            <path
+                              stroke='currentColor'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth='2'
+                              d='M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2'
+                            />
+                          </svg>
+                          <p className='mb-1 text-center text-sm text-gray-500 dark:text-gray-400 lg:text-start'>
+                            <span className='font-semibold'>
+                              Clicquez pour télécharger
+                            </span>
+                            &nbsp; or glissez le ici
+                          </p>
+                          <p className='text-xs text-gray-500 dark:text-gray-400'>
+                            SVG, PNG, JPG or GIF
+                          </p>
+                        </div>
+                      </FileInput>
+                      <FileUploaderContent>
+                        {field.value &&
+                          field.value?.length > 0 &&
+                          field.value?.map((file, i) => (
+                            <FileUploaderItem key={i} index={i}>
+                              <Paperclip className='h-4 w-4 stroke-current' />
+                              <span>{file.name}</span>
+                            </FileUploaderItem>
+                          ))}
+                      </FileUploaderContent>
+                    </FileUploader>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <StepperFormActions />
+            </form>
+          </Form>
+        )}
       </CardContent>
     </Card>
   )
@@ -616,7 +792,7 @@ function MyStepperFooter() {
   return (
     <>
       <div className='my-2 flex h-40 items-center justify-center rounded-md border bg-secondary text-primary'>
-        <h1 className='text-xl'>Woohoo! All steps completed! 🎉</h1>
+        <h1 className='text-xl'>Yoohoo! Toutes étapes sont remplis ! 🎉</h1>
       </div>
       <div className='flex items-center justify-end gap-2'>
         <Button onClick={resetSteps}>Reset Stepper with Form</Button>

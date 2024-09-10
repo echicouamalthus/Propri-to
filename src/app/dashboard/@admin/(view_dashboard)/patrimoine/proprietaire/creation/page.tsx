@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useState } from 'react'
-import { TProprietaire, Proprietaire } from '@/entites/proprietaire'
+import { TProprietaire, ProprietaireSchema } from '@/entites/proprietaire'
 import { PhoneInput } from '@/components/ui/phone-input'
 import {
   Popover,
@@ -92,7 +92,7 @@ function FirstStepForm({
 
   const form = useForm<TProprietaire>({
     resolver: zodResolver(
-      Proprietaire.pick({
+      ProprietaireSchema.pick({
         nom_complet: true,
         adresse: true,
         telephone: true,
@@ -138,7 +138,7 @@ function FirstStepForm({
                 </FormItem>
               )}
             />
-            
+
             {/* <FormField
               control={form.control}
               name='date_de_naissance'
@@ -230,7 +230,7 @@ function SecondStepForm({
 
   const form = useForm<TProprietaire>({
     resolver: zodResolver(
-      Proprietaire.pick({
+      ProprietaireSchema.pick({
         option_pay: true,
         profession: true,
         contact: true,
@@ -241,13 +241,13 @@ function SecondStepForm({
 
   async function onSubmit(_data: TProprietaire) {
     updateFormData(_data)
-    // const [data, err] = await execute({ ...formData, ..._data })
-    // if (err) {
-    //   console.log('quelque chose ne va pas', err)
-    // }
-
-    console.log(`Final Form Data:`, { ...formData, ..._data })
-    nextStep()
+    const [data, err] = await execute({ ...formData, ..._data })
+    if (data) {
+      console.log(`Final Form Data:`, data)
+      nextStep()
+    } else {
+      console.log('quelque chose ne va pas', err)
+    }
   }
 
   return (
@@ -377,7 +377,7 @@ function MyStepperFooter() {
   return (
     <>
       <div className='my-2 flex h-40 items-center justify-center rounded-md border bg-secondary text-primary'>
-        <h1 className='text-xl'>Woohoo! All steps completed! 🎉</h1>
+        <h1 className='text-xl'>Yoohoo! Toutes étapes sont remplis ! 🎉</h1>
       </div>
       <div className='flex items-center justify-end gap-2'>
         <Button onClick={resetSteps}>Reset Stepper with Form</Button>

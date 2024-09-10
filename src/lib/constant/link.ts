@@ -1,18 +1,18 @@
 export type link = {
-  label: string;
-  href: string;
-};
+  label: string
+  href: string
+}
 export const Links: link[] = [
   {
-    label: "Pour qui ?",
-    href: "#",
+    label: 'Pour qui ?',
+    href: '#'
   },
   {
-    label: "Fonctionnalité",
-    href: "#",
+    label: 'Fonctionnalité',
+    href: '#'
   },
   {
-    label: "contact",
-    href: "#",
-  },
-];
+    label: 'contact',
+    href: '/contact'
+  }
+]

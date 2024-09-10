@@ -12,7 +12,7 @@ export const DashboardLink: dashboardLink[] = [
     href: "#",
     bottom_Link: [
       {
-        label: "Propriété",
+        label: "Propriétaire",
         href: "/dashboard/patrimoine/proprietaire",
       },
       {

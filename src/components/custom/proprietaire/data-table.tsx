@@ -126,21 +126,23 @@ export function DataTableDemo({ data }: { data: TProprietaire[] }) {
     //   enableHiding: false
     // },
     {
-      id: 'select',
-      cell: ({ row }) => (
-        <Avatar>
-          <AvatarFallback className='uppercase'>
-            {row.getValue('nom_complet') &&
-              row.getValue('nom_complet').substr(0, 2)}
-          </AvatarFallback>
-        </Avatar>
-      ),
+      id: 'avatar',
+      cell: ({ row }) => {
+        const nom_complet = row.original.nom_complet
+        return (
+          <Avatar>
+            <AvatarFallback className='font-semibold uppercase'>
+              {nom_complet.substring(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+        )
+      },
       enableHiding: false,
       enableSorting: false
     },
     {
       accessorKey: 'nom_complet',
-      header: 'Responsable légal',
+      header: 'Responsable légal ou garant',
       cell: ({ row }) => (
         <div className='capitalize'>{row.getValue('nom_complet')}</div>
       )
@@ -295,7 +297,7 @@ export function DataTableDemo({ data }: { data: TProprietaire[] }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild className='hidden lg:flex'>
                 <Button variant='outline' className='ml-auto'>
-                  Columns <ChevronDown className='ml-2 h-4 w-4' />
+                  Filtrer <ChevronDown className='ml-2 h-4 w-4' />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
